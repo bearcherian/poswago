@@ -37,16 +37,16 @@ type PathItem struct {
 }
 
 type PathOperation struct { //todo
-	Tags         []string              `json:"tags"`
-	Summary      string                `json:"summary"`
-	Description  string                `json:"description"`
-	ExternalDocs ExternalDocumentation `json:"externalDocs"`
-	OperationID  string                `json:"operationId"`
-	Parameters   []Parameter           `json:"parameters"`
+	Tags         []string              `json:"tags,omitempty"`
+	Summary      string                `json:"summary,omitempty"`
+	Description  string                `json:"description,omitempty"`
+	ExternalDocs ExternalDocumentation `json:"externalDocs,omitempty"`
+	OperationID  string                `json:"operationId,omitempty"`
+	Parameters   []Parameter           `json:"parameters,omitempty"`
 	Responses    Responses             `json:"responses"`
-	Callbacks    map[string]Callback   `json:"callback"`
-	Deprecated   bool                  `json:"deprecated"`
-	Security     []Security            `json:"security"`
+	Callbacks    map[string]Callback   `json:"callback,omitempty"`
+	Deprecated   bool                  `json:"deprecated,omitempty"`
+	Security     []Security            `json:"security,omitempty"`
 	Servers      []*Server             `json:"servers,omitempty"`
 }
 
@@ -56,7 +56,7 @@ type Security map[string]string
 
 type Header struct {
 	Description     string             `json:"description"`
-	Required        bool               `json:"required"`
+	Required        bool               `json:"required,omitempty"`
 	Deprecated      bool               `json:"deprecated"`
 	AllowEmptyValue bool               `json:"allowEmptyValue"`
 	Style           string             `json:"style,omitempty"`
