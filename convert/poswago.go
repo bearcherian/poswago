@@ -2,11 +2,14 @@ package convert
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 
 	"github.com/bearcherian/poswago/postman"
 	"github.com/bearcherian/poswago/swagger"
 )
+
+var urlParamReg *regexp.Regexp = regexp.MustCompile(`\{\{([^\{\}]*)\}\}`)
 
 func PostmanToSwagger(postmanSpec postman.Spec) (*swagger.OpenApiSpec, error) {
 
@@ -171,6 +174,8 @@ func postmanItemToOARequest(item postman.Item) (string, *swagger.PathItem) {
 
 	p := fmt.Sprintf("/%s", strings.Join(r.Url.Path, "/"))
 
+	p = urlParamReg.ReplaceAllString(p, "{$1}")
+
 	s := swagger.PathItem{}
 
 	s.Description = &r.Description
@@ -202,15 +207,36 @@ func postmanItemToOARequest(item postman.Item) (string, *swagger.PathItem) {
 func requestToPathOperation(request *postman.Request) *swagger.PathOperation {
 	o := swagger.PathOperation{
 		Description: request.Description,
-		OperationID: request.Url.Raw,
+		Responses:   swagger.Responses{},
+		OperationID: fmt.Sprintf("%s_%s", request.Method, request.Url.Raw),
 	}
 
+	// convert url parameters to swagger params
+	params := urlParamReg.FindAllString(request.Url.Raw, -1)
+	for _, p := range params {
+		// skip the parameterized host url
+		if strings.Index(request.Url.Raw, p) == 0 {
+			continue
+		}
+
+		p = urlParamReg.ReplaceAllString(p, "$1")
+		param := swagger.Parameter{
+			Name: p,
+			In:   "path",
+		}
+		param.Required = true
+
+		o.Parameters = append(o.Parameters, param)
+	}
+
+	// convert query params to parameters
 	for _, q := range request.Url.Queries {
 		param := swagger.Parameter{}
 
 		param.Description = q.Description
 		param.Name = q.Key
 		param.Example = q.Value
+		param.In = "query"
 
 		o.Parameters = append(o.Parameters, param)
 	}
