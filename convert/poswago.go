@@ -209,6 +209,21 @@ func postmanItemToOARequest(item postman.Item) (string, *swagger.PathItem) {
 		s.Delete = requestToPathOperation(item.Request)
 	}
 
+	// parse responses/examples
+	if item.Response != nil {
+		poResps := *item.Response
+		swResponses := make(map[string]swagger.Response, len(poResps))
+
+		for _, resp := range poResps {
+			swResp := swagger.Response{}
+
+			//TODO all of this
+
+			swResponses[resp.Name] = swResp
+		}
+
+	}
+
 	return p, &s
 
 }

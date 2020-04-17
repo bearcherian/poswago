@@ -14,6 +14,10 @@ type Header struct {
 	Type        string `json:"type"`
 }
 
+type Cookie struct {
+	
+}
+
 type URL struct {
 	Raw     string   `json:"raw"`
 	Host    []string `json:"host"`
