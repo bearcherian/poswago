@@ -1,6 +1,7 @@
 package convert
 
 import (
+	"encoding/json"
 	"fmt"
 	"regexp"
 	"strings"
@@ -11,34 +12,42 @@ import (
 
 var urlParamReg *regexp.Regexp = regexp.MustCompile(`\{\{([^\{\}]*)\}\}`)
 
+// PostmanJSONToOpenAPI converts JSON data exported from Postman to a valid OpenAPI v3.0.0 spec
+func PostmanJSONToOpenAPI(postmanSource []byte) (*swagger.OpenApiSpec, error) {
+	var postmanSpec postman.Spec
+	json.Unmarshal(postmanSource, &postmanSpec)
+	return PostmanToSwagger(postmanSpec)
+}
+
+// PostmanToSwagger converts a postman spec type to an OpenAPI v3.0.0 spec
 func PostmanToSwagger(postmanSpec postman.Spec) (*swagger.OpenApiSpec, error) {
 
-	openApiSpec := swagger.OpenApiSpec{
+	openAPISpec := swagger.OpenApiSpec{
 		OpenAPI: "3.0.0",
-	}
-	openApiSpec.Info = swagger.Info{
-		Title:       postmanSpec.Info.Name,
-		Description: postmanSpec.Info.Description,
-		Version:     "",
+		Info: swagger.Info{
+			Title:       postmanSpec.Info.Name,
+			Description: postmanSpec.Info.Description,
+			Version:     "",
+		},
+		Paths: make(map[string]*swagger.PathItem),
 	}
 
-	openApiSpec.Paths = make(map[string]*swagger.PathItem)
 	for _, item := range postmanSpec.Items {
 		pathItems := convertItemsToPaths(item)
 
 		for k, v := range pathItems {
 			fmt.Printf("Adding %s pathItem\n", k)
-			if existingPathItem, ok := openApiSpec.Paths[k]; ok {
+			if existingPathItem, ok := openAPISpec.Paths[k]; ok {
 				fmt.Printf("pathItem %s already exists. merging...\n", k)
-				openApiSpec.Paths[k] = mergePathItems(existingPathItem, v)
+				openAPISpec.Paths[k] = mergePathItems(existingPathItem, v)
 			} else {
 				fmt.Printf("pathItem %s is new\n", k)
-				openApiSpec.Paths[k] = v
+				openAPISpec.Paths[k] = v
 			}
 		}
 	}
 
-	return &openApiSpec, nil
+	return &openAPISpec, nil
 }
 
 func convertItemsToPaths(i postman.Item) map[string]*swagger.PathItem {
@@ -219,6 +228,7 @@ func requestToPathOperation(request *postman.Request) *swagger.PathOperation {
 			continue
 		}
 
+		// strip brackets from the param name
 		p = urlParamReg.ReplaceAllString(p, "$1")
 		param := swagger.Parameter{
 			Name: p,
